@@ -1,4 +1,4 @@
-# flixw-compiler-sdk
+# flixw-plugin-sdk
 
 Shared library for the flixw plugins `flixw-metrics` and `flixw-mutate`.
 Each plugin is one JAR and embeds a fixed SDK version; plugins do not depend on each other at run time.
