@@ -12,7 +12,7 @@ Design phase, no code yet. The implementation follows in
 ## Modules
 
 - `kit` is the plugin shell. It reads the flixw context, launches the plugin, stores cache entries,
-  writes provenance and reports, and defines the shared exit codes. It has no knowledge of Flix.
+  collects provenance and reports, and defines the shared exit codes. It has no knowledge of Flix.
   Package: `dev.flixw.sdk.kit`.
 - `flix-bridge` holds the adapters between the plugins and unchanged Flix compilers, the ABI check
   driver, the version data (`versions.json`, with a digest per compiler jar) and the stable model.
@@ -22,7 +22,7 @@ Rules, smells, operators, engines and report formats stay in the plugins.
 
 ## Constraint
 
-Everything runs against unchanged stock Flix compilers. The repository has no access to the Flix
+Everything runs against unchanged stock Flix compilers. The owner has no access to the Flix
 upstream repository, and upstream changes are not expected. The per-capability linkage check is the
 protection against compiler changes.
 
@@ -32,7 +32,7 @@ protection against compiler changes.
   [#23](https://github.com/wstein/flixw-metrics/issues/23),
   [flixw-mutate#1](https://github.com/wstein/flixw-mutate/issues/1) and
   [#2](https://github.com/wstein/flixw-mutate/issues/2).
-- Design: `docs/design/SDK.md` in `wstein/flixw-metrics` (on `main` after PR #27 is merged).
+- Design: [`docs/design/SDK.md`](https://github.com/wstein/flixw-metrics/blob/main/docs/design/SDK.md) in `wstein/flixw-metrics`.
 
 ## License
 
