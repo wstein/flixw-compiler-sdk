@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
  *     one, and that no newer family claims it, so the registry selects this family for it.
  * <li>{@code adapter <family> <version> <fixtureRoot>} runs with that release's jar on the class
  *     path. It checks that {@link Adapters#select()} chooses this family and that the adapter
- *     measures the fixture, and and that its measurement digest is the recorded one.
+ *     measures the fixture, and that its measurement digest is the recorded one.
  * <li>{@code rejected <libDir>} checks that every rejected release is refused: the
  *     ABI check refuses it and names the reference that {@code versions.json} gives as the reason.
  * </ul>
