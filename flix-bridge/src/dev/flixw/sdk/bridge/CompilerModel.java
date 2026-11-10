@@ -25,10 +25,10 @@ import java.util.List;
  *
  * <h2>Implementing one</h2>
  *
- * <p>Implementations must be instantiable with a public no-argument constructor and named in
- * {@link Adapters}. They are loaded reflectively by name, which is what keeps them off the
- * class path of the phase that has no compiler: an adapter is only ever loaded in a JVM that
- * already has the compiler it was written for.
+ * <p>Implementations must be instantiable with a public no-argument constructor and listed as a
+ * family in {@code versions.json}, which {@link Adapters} reads. They are loaded reflectively by
+ * name, which is what keeps them off the class path of the phase that has no compiler: an
+ * adapter is only ever loaded in a JVM that already has the compiler it was written for.
  */
 public interface CompilerModel {
 
@@ -41,7 +41,7 @@ public interface CompilerModel {
      * <p>It is here because it will be needed and is cheap now: the moment an adapter ships
      * separately from this jar -- built by someone else, for a Flix generation this build has
      * never seen -- the two need a way to say whether they agree. Today each adapter is compiled
-     * in its own versioned module under the top-level {@code adapter} group and every adapter is
+     * in its own versioned module under the {@code flix-bridge.adapter} group and every adapter is
      * packaged with this SDK in the same plugin jar, so they cannot disagree and nothing checks
      * the declared version.
      *
