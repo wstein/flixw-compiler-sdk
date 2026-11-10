@@ -102,6 +102,13 @@ public final class VersionDataTest {
             "unsupported schema");
         rejects(minimal("\"status\": \"verified\", \"family\": \"f\"").replace("\"floor\": \"0.60.0\"",
             "\"floor\": \"0.59.9\""), "floor is not a release");
+        String verified = "\"status\": \"verified\", \"family\": \"f\"";
+        String release = "{\"version\": \"0.60.0\", \"sha256\": \"" + hex() + "\", " + verified + "}";
+        rejects(minimal(verified).replace("}]}", "}, " + release + "]}"), "duplicate release");
+        String family = "{\"id\": \"f\", \"adapter\": \"a.B\", \"floor\": \"0.60.0\","
+            + " \"testVersion\": \"0.60.0\", \"capabilities\": [\"metrics\"]}";
+        rejects(minimal(verified).replace("}], \"releases\"", "}, " + family + "], \"releases\""),
+            "duplicate family");
         require(VersionData.parse(minimal("\"status\": \"verified\", \"family\": \"f\"")).verified()
             .equals(List.of("0.60.0")), "the minimal document is accepted");
         System.out.println("VersionDataTest: " + passed + " passed, 0 failed");
