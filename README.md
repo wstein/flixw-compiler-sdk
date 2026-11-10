@@ -5,9 +5,9 @@ Each plugin is one JAR and embeds a fixed SDK version; plugins do not depend on 
 
 ## Status
 
-The Java 21 `kit` module is available as source. The compiler bridge follows in
-[flixw-metrics#22](https://github.com/wstein/flixw-metrics/issues/22) and
-[#23](https://github.com/wstein/flixw-metrics/issues/23).
+The Java 21 `kit` module and the `flix-bridge` module (seven adapter families, ABI driver,
+`versions.json`) are available as source. Capability selection and skipped-adapter headers follow in
+[flixw-metrics#23](https://github.com/wstein/flixw-metrics/issues/23). No release asset exists yet.
 
 ## Modules
 
@@ -70,3 +70,23 @@ compiled kit classes or resources in a plugin JAR, include
 `kit/resources/META-INF/LICENSE-flixw-plugin-sdk` in that JAR. The kit has no Flix, Scala,
 Metrics or third-party Java dependency. ABI inspection, adapters, capability selection,
 extra headers and cache-key fields remain outside this extraction.
+
+## flix-bridge development
+
+`flix-bridge` is in [`flix-bridge/`](flix-bridge/docs/BRIDGE.md). The Flix compiler jars it compiles and
+tests against are named, with a SHA-256 each, in
+`flix-bridge/resources/dev/flixw/sdk/bridge/versions.json`; `sh scripts/fetch-flix.sh` puts them in
+`flix-bridge/lib` (ignored by git, never bundled; `FLIXW_BRIDGE_JAR_CACHE=<dir>` reuses earlier
+downloads after the digest matches). Needs `jq`, `curl` and `python3`.
+
+- `sh scripts/check.sh` runs everything; `--kit-only` needs no compiler jar.
+- `./mill --no-server flix-bridge.test.unit` runs the unit tests, the ABI test and the rejected-release check;
+  `./mill --no-server flix-bridge.test.family --id flix0761` runs one family's conformance suite and adapter test;
+  `./mill --no-server flix-bridge.test.check` runs all of them.
+- `sh scripts/check-package.sh` builds the jars and runs `examples/BridgeExample.java` as a plugin.
+- `sh scripts/check-layout.sh` and `sh scripts/check-docs.sh` are the layout, license, matrix and documentation guards.
+- `sh scripts/check.sh --mutations` also runs the opt-in mutations of `scripts/mutations-bridge.py`
+  (`MUT_ONLY=<name>` for one).
+
+Public API of the bridge: `Adapters.select()` (adapter, family, cache fields), `AdapterAbi`,
+`CompilerCapabilities`, `VersionData`, `CompilerModel` (the Metrics capability), `Capability`, `DatalogGraph`.

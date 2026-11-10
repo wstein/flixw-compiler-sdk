@@ -35,8 +35,6 @@ trait FlixAdapter extends ScalaModule {
 
   def scalacOptions = Seq("-deprecation", "-feature", "-Xfatal-warnings")
 
-  def versionsFile = Task.Source(`flix-bridge`.moduleDir / "resources" / "dev" / "flixw" / "sdk" / "bridge" / "versions.json")
-
   def compilerJar = Task.Input {
     val floor = versionData(`flix-bridge`.moduleDir)("families").arr
       .find(_("id").str == family).get("floor").str
@@ -106,45 +104,57 @@ object `flix-bridge` extends JavaModule {
       super.compileClasspath() ++ Task.traverse(adapter.all)(_.compile)().map(_.classes)
     }
 
+    private def classpath = Task {
+      (runClasspath() ++ Seq(compile().classes)).map(_.path).mkString(java.io.File.pathSeparator)
+    }
+
+    private def jar(version: String) = {
+      val path = `flix-bridge`.moduleDir / "lib" / s"flix-$version.jar"
+      if (!os.exists(path)) sys.error(s"missing $path; run sh scripts/fetch-flix.sh")
+      path
+    }
+
+    private def run(cp: String, main: String, args: os.Shellable*) =
+      os.proc("java", "-cp", cp, "dev.flixw.sdk.bridge." + main, args)
+        .call(stdout = os.Inherit, stderr = os.Inherit)
+
     /** Plain `main` methods run in order, not a framework: no test dependency joins a compiler class path. */
-    def check() = Task.Command {
-      val sep = java.io.File.pathSeparator
-      val cp = (runClasspath() ++ Seq(compile().classes)).map(_.path).mkString(sep)
+    def unit() = Task.Command { runUnit(classpath()) }
+
+    private def runUnit(cp: String): Unit = {
       val data = versionData(`flix-bridge`.moduleDir)
-      def jar(version: String) = {
-        val path = `flix-bridge`.moduleDir / "lib" / s"flix-$version.jar"
-        if (!os.exists(path)) sys.error(s"missing $path; run sh scripts/fetch-flix.sh")
-        path
-      }
-      for (main <- Seq("CompilerModelTest", "DatalogGraphTest", "VersionDataTest"))
-        os.proc("java", "-cp", cp, "dev.flixw.sdk.bridge." + main)
-          .call(stdout = os.Inherit, stderr = os.Inherit)
+      for (main <- Seq("CompilerModelTest", "DatalogGraphTest", "VersionDataTest")) run(cp, main)
       val families = data("families").arr
       // The newest family against its test jar, every older family against its floor jar.
       val abiJars = jar(families.head("testVersion").str) +: families.tail.map(f => jar(f("floor").str)).toSeq
-      os.proc("java", "-cp", cp, "dev.flixw.sdk.bridge.CompilerCapabilitiesTest", abiJars)
-        .call(stdout = os.Inherit, stderr = os.Inherit)
-      val releases = data("releases").arr
-      os.proc("java", "-cp", cp, "dev.flixw.sdk.bridge.ConformanceTest", "rejected", moduleDir / os.up / "lib")
-        .call(stdout = os.Inherit, stderr = os.Inherit)
-      for (module <- adapter.all) {
-        val family = data("families").arr.find(_("id").str == module.family).get
-        val testVersion = family("testVersion").str
-        val fixture = releases.find(_("version").str == testVersion).get("fixture").str
-        os.proc("java", "-cp", cp, "dev.flixw.sdk.bridge.ConformanceTest", "linkage", module.family,
-                moduleDir / os.up / "lib")
-          .call(stdout = os.Inherit, stderr = os.Inherit)
-        // One JVM per verified release of the family, each with only that release's jar.
-        for (release <- releases.filter(r => r.obj.get("family").exists(_.str == module.family)))
-          os.proc("java", "-cp", cp + sep + jar(release("version").str), "dev.flixw.sdk.bridge.ConformanceTest",
-                  "adapter", module.family, release("version").str, moduleDir / "fixtures")
-            .call(stdout = os.Inherit, stderr = os.Inherit)
-        val simple = family("adapter").str.split('.').last
-        os.proc("java", "-cp", cp + sep + jar(testVersion), "dev.flixw.sdk.bridge." + simple + "Test",
-                moduleDir / "fixtures" / fixture)
-          .call(stdout = os.Inherit, stderr = os.Inherit)
-      }
+      run(cp, "CompilerCapabilitiesTest", abiJars)
+      run(cp, "ConformanceTest", "rejected", `flix-bridge`.moduleDir / "lib")
       ()
+    }
+
+    /** The conformance suite and the adapter test of one family, under every verified release's jar. */
+    def family(id: String) = Task.Command { runFamily(classpath(), id) }
+
+    private def runFamily(cp: String, id: String): Unit = {
+      val sep = java.io.File.pathSeparator
+      val data = versionData(`flix-bridge`.moduleDir)
+      val releases = data("releases").arr
+      val family = data("families").arr.find(_("id").str == id).getOrElse(sys.error(s"unknown family $id"))
+      run(cp, "ConformanceTest", "linkage", id, `flix-bridge`.moduleDir / "lib")
+      // One JVM per verified release of the family, each with only that release's jar.
+      for (release <- releases.filter(r => r.obj.get("family").exists(_.str == id)))
+        run(cp + sep + jar(release("version").str), "ConformanceTest", "adapter", id, release("version").str,
+            moduleDir / "fixtures")
+      val testVersion = family("testVersion").str
+      val fixture = releases.find(_("version").str == testVersion).get("fixture").str
+      run(cp + sep + jar(testVersion), family("adapter").str.split('.').last + "Test", moduleDir / "fixtures" / fixture)
+      ()
+    }
+
+    def check() = Task.Command {
+      val cp = classpath()
+      runUnit(cp)
+      for (module <- adapter.all) runFamily(cp, module.family)
     }
   }
 }
