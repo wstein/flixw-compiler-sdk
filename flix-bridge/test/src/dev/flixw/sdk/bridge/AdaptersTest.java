@@ -20,8 +20,9 @@ public final class AdaptersTest {
                 "Adapters." + method.getName() + " takes no ClassLoader: adapters link against the class path");
         }
         require(Arrays.stream(Adapters.class.getDeclaredMethods())
-                .anyMatch(method -> method.getName().equals("select") && method.getParameterCount() == 0),
-            "Adapters.select() is public API");
+                .anyMatch(method -> method.getName().equals("select") && method.getParameterCount() == 0
+                    && Modifier.isPublic(method.getModifiers()) && Modifier.isStatic(method.getModifiers())),
+            "Adapters.select() is public static API");
         System.out.println("AdaptersTest: " + passed + " passed, 0 failed");
     }
 

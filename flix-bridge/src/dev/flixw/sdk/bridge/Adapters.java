@@ -45,20 +45,22 @@ public final class Adapters {
     }
 
     /**
-     * The first adapter that links against the class path, with its family; null when none does.
+     * The first adapter that links against the compiler this class's loader sees, with its family;
+     * null when none does.
      *
-     * <p>There is deliberately no overload taking another class loader: an adapter is loaded by
-     * this class's own loader, so it links against the compiler that loader sees. Checking the
-     * contract against a different compiler would select an adapter that then fails to bind.
+     * <p>One loader does both jobs: the contract is checked against the loader that loaded this
+     * class, and the adapter is loaded by that same loader, so it binds to the compiler that was
+     * checked. In a plugin's own loader that is the compiler on that loader's path, not the one on
+     * the system class path. There is deliberately no overload taking another loader.
      */
     public static Selection select() {
-        ClassLoader compiler = ClassLoader.getSystemClassLoader();
+        ClassLoader loader = Adapters.class.getClassLoader();
         VersionData data = VersionData.load();
         for (VersionData.Family family : FAMILIES) {
             String name = family.adapter();
             try {
-                if (!AdapterAbi.missing(AdapterAbi.contract(name), compiler).isEmpty()) continue;
-                Class<?> type = Class.forName(name);
+                if (!AdapterAbi.missing(AdapterAbi.contract(name), loader).isEmpty()) continue;
+                Class<?> type = Class.forName(name, true, loader);
                 Object instance = type.getDeclaredConstructor().newInstance();
                 if (instance instanceof CompilerModel model)
                     return new Selection(model, family.id(), name, data.cacheFields(family.id()));

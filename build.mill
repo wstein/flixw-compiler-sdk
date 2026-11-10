@@ -119,9 +119,14 @@ object `flix-bridge` extends JavaModule {
         .call(stdout = os.Inherit, stderr = os.Inherit)
 
     /** Plain `main` methods run in order, not a framework: no test dependency joins a compiler class path. */
-    def unit() = Task.Command { runUnit(classpath()) }
+    def unit() = Task.Command { runUnit(classpath(), bridgeClasspath(), compile().classes.path) }
 
-    private def runUnit(cp: String): Unit = {
+    /** The bridge, its adapters and the kit, without the tests: what a plugin's own loader holds. */
+    private def bridgeClasspath = Task {
+      runClasspath().map(_.path).mkString(java.io.File.pathSeparator)
+    }
+
+    private def runUnit(cp: String, bridgeCp: String, testClasses: os.Path): Unit = {
       val data = versionData(`flix-bridge`.moduleDir)
       for (main <- Seq("AdaptersTest", "CompilerModelTest", "DatalogGraphTest", "VersionDataTest")) run(cp, main)
       val families = data("families").arr
@@ -129,6 +134,11 @@ object `flix-bridge` extends JavaModule {
       val abiJars = jar(families.head("testVersion").str) +: families.tail.map(f => jar(f("floor").str)).toSeq
       run(cp, "CompilerCapabilitiesTest", abiJars)
       run(cp, "ConformanceTest", "rejected", `flix-bridge`.moduleDir / "lib")
+      // The bridge in a child loader that sees 0.79.0, while the system class path sees only 0.60.0.
+      val newest = families.head("testVersion").str
+      val oldest = families.last("floor").str
+      run(testClasses.toString + java.io.File.pathSeparator + jar(oldest), "ChildLoaderTest",
+          bridgeCp + java.io.File.pathSeparator + jar(newest), families.head("id").str)
       ()
     }
 
@@ -153,7 +163,7 @@ object `flix-bridge` extends JavaModule {
 
     def check() = Task.Command {
       val cp = classpath()
-      runUnit(cp)
+      runUnit(cp, bridgeClasspath(), compile().classes.path)
       for (module <- adapter.all) runFamily(cp, module.family)
     }
   }
