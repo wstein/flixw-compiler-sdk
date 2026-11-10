@@ -80,8 +80,11 @@ object `flix-bridge` extends JavaModule {
     /** The Validation-era adapter. */
     object flix0610 extends FlixAdapter { def family = "flix0610" }
 
+    /** The pre-extensible-match adapter. */
+    object flix0600 extends FlixAdapter { def family = "flix0600" }
+
     /** Every adapter, newest first. */
-    def all: Seq[FlixAdapter] = Seq(flix0761, flix0753, flix0680, flix0672, flix0661, flix0610)
+    def all: Seq[FlixAdapter] = Seq(flix0761, flix0753, flix0680, flix0672, flix0661, flix0610, flix0600)
   }
 
   /** Package every adapter family, but none of the compiler jars used to compile them. */
