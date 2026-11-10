@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Finds the adapter that links against the compiler on this class path.
+ * Finds the adapter that links against the compiler visible to this class's loader.
  *
  * <p>Selection is by <em>linkage</em>, not by version string. The bytecode-derived ABI contract is
  * checked before an adapter is instantiated, because the JVM is allowed to resolve method
@@ -13,7 +13,7 @@ import java.util.Map;
  * which versions are secretly compatible.
  *
  * <p>Loaded by name so that nothing outside this method mentions an adapter class. The phase
- * that runs without a compiler on its class path can hold a reference to {@link CompilerModel}
+ * that runs without a compiler visible to its loader can hold a reference to {@link CompilerModel}
  * all day; it never loads anything that would need Scala or Flix to resolve.
  */
 public final class Adapters {

@@ -4,7 +4,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
 
-/** Checks the public shape of {@link Adapters}; runs without a compiler on the class path. */
+/** Checks the public shape of {@link Adapters}; runs without a compiler visible to the bridge's loader. */
 public final class AdaptersTest {
     private static int passed;
 
@@ -17,7 +17,7 @@ public final class AdaptersTest {
         for (Method method : Adapters.class.getDeclaredMethods()) {
             if (!Modifier.isPublic(method.getModifiers())) continue;
             require(Arrays.stream(method.getParameterTypes()).noneMatch(ClassLoader.class::isAssignableFrom),
-                "Adapters." + method.getName() + " takes no ClassLoader: adapters link against the class path");
+                "Adapters." + method.getName() + " takes no ClassLoader: adapters link against the compiler their own loader sees");
         }
         require(Arrays.stream(Adapters.class.getDeclaredMethods())
                 .anyMatch(method -> method.getName().equals("select") && method.getParameterCount() == 0
