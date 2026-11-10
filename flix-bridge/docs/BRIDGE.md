@@ -21,7 +21,7 @@ The jars are compile and test inputs in `flix-bridge/lib`. They are not committe
 ## Selection and cache fields
 
 `Adapters.select()` returns the first family whose bytecode-derived contract links against the
-compiler on the class path, with `cacheFields(family)`: `sdkVersion` and `adapterFamily`. A plugin
+compiler visible to the bridge's class loader, with `cacheFields(family)`: `sdkVersion` and `adapterFamily`. A plugin
 adds both to its cache key as explicit fields.
 
 ## Capabilities
