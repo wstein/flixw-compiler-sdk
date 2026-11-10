@@ -95,6 +95,7 @@ public final class CompilerCapabilitiesTest {
                 "the gate requires the formal parameter node used for names and FlixDoc width");
 
             nestedClasses(work);
+            descriptors(work);
             require(CompilerCapabilities.present(ClassLoader.getPlatformClassLoader(), "java.lang.String")
                     && !CompilerCapabilities.present(ClassLoader.getPlatformClassLoader(), "no.Such"),
                 "presence is judged by loading without initializing");
@@ -233,6 +234,57 @@ public final class CompilerCapabilitiesTest {
                     "an absent adapter class names the resource it could not read");
             }
         }
+    }
+
+    /**
+     * A field and a constructor are matched by descriptor as well as by name: a compiler that has
+     * a member of that name with another type does not satisfy the contract.
+     */
+    private static void descriptors(Path work) throws IOException {
+        Path exact = work.resolve("descriptor-exact");
+        Path other = work.resolve("descriptor-other");
+        String type = "package ca.uwaterloo.flix.api; public final class Flix { ";
+        write(exact, "ca/uwaterloo/flix/api/Flix.java",
+            type + "public static int level; public Flix(int a) { } }");
+        write(other, "ca/uwaterloo/flix/api/Flix.java",
+            type + "public static long level; public Flix(long a) { } }");
+        write(work.resolve("descriptor-caller"), "fixture/Caller.java", "package fixture; public final class Caller { "
+            + "public Object make() { ca.uwaterloo.flix.api.Flix.level = 1; "
+            + "return new ca.uwaterloo.flix.api.Flix(2); } }");
+        Path exactClasses = work.resolve("descriptor-exact-classes");
+        Path otherClasses = work.resolve("descriptor-other-classes");
+        Path callerClasses = work.resolve("descriptor-caller-classes");
+        for (Path dir : List.of(exactClasses, otherClasses, callerClasses)) Files.createDirectories(dir);
+        compile(exactClasses, null, exact.resolve("ca/uwaterloo/flix/api/Flix.java"));
+        compile(otherClasses, null, other.resolve("ca/uwaterloo/flix/api/Flix.java"));
+        compile(callerClasses, exactClasses, work.resolve("descriptor-caller/fixture/Caller.java"));
+        try (java.net.URLClassLoader callerLoader = new java.net.URLClassLoader(
+                new java.net.URL[] {callerClasses.toUri().toURL()}, ClassLoader.getPlatformClassLoader());
+             java.net.URLClassLoader exactLoader = new java.net.URLClassLoader(
+                new java.net.URL[] {exactClasses.toUri().toURL()}, ClassLoader.getPlatformClassLoader());
+             java.net.URLClassLoader otherLoader = new java.net.URLClassLoader(
+                new java.net.URL[] {otherClasses.toUri().toURL()}, ClassLoader.getPlatformClassLoader())) {
+            AdapterAbi.Contract contract = AdapterAbi.contract("fixture.Caller", callerLoader);
+            List<String> references = contract.references().stream().map(AdapterAbi.Reference::display).toList();
+            require(references.contains("ca.uwaterloo.flix.api.Flix.level:I")
+                    && references.contains("ca.uwaterloo.flix.api.Flix.<init>:(I)V"),
+                "the fixture contract has a field and a constructor with their descriptors");
+            require(AdapterAbi.missing(contract, exactLoader).isEmpty(),
+                "a compiler with the same field and constructor descriptors satisfies the contract");
+            List<String> missing = AdapterAbi.missing(contract, otherLoader);
+            require(missing.contains("ca.uwaterloo.flix.api.Flix.level:I"),
+                "a field of the same name with another type is missing");
+            require(missing.contains("ca.uwaterloo.flix.api.Flix.<init>:(I)V"),
+                "a constructor with other parameter types is missing");
+        }
+    }
+
+    private static void compile(Path output, Path classPath, Path source) {
+        List<String> command = new java.util.ArrayList<>(List.of("-d", output.toString()));
+        if (classPath != null) command.addAll(List.of("-cp", classPath.toString()));
+        command.add(source.toString());
+        require(ToolProvider.findFirst("javac").orElseThrow()
+            .run(System.out, System.err, command.toArray(String[]::new)) == 0, "descriptor fixture compiles");
     }
 
     /** Inspection needs a loader now; the gate never initialises through it. */
