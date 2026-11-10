@@ -121,7 +121,11 @@ object `flix-bridge` extends JavaModule {
     /** Plain `main` methods run in order, not a framework: no test dependency joins a compiler class path. */
     def unit() = Task.Command { runUnit(classpath(), bridgeClasspath(), compile().classes.path) }
 
-    /** The bridge, its adapters and the kit, without the tests: what a plugin's own loader holds. */
+    /**
+     * The test module's run class path: the bridge, its adapters and the kit, plus this module's own
+     * test classes. ChildLoaderTest gives it to a child loader that must see the bridge; the tests
+     * in it are only data there, never run.
+     */
     private def bridgeClasspath = Task {
       runClasspath().map(_.path).mkString(java.io.File.pathSeparator)
     }
