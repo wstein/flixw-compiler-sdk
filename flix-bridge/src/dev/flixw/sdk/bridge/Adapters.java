@@ -40,17 +40,19 @@ public final class Adapters {
 
     /** The first adapter that links, or null when none does. */
     public static CompilerModel resolve() {
-        Selection selection = select(ClassLoader.getSystemClassLoader());
+        Selection selection = select();
         return selection == null ? null : selection.model();
     }
 
-    /** The first adapter that links against the class path, with its family; null when none does. */
+    /**
+     * The first adapter that links against the class path, with its family; null when none does.
+     *
+     * <p>There is deliberately no overload taking another class loader: an adapter is loaded by
+     * this class's own loader, so it links against the compiler that loader sees. Checking the
+     * contract against a different compiler would select an adapter that then fails to bind.
+     */
     public static Selection select() {
-        return select(ClassLoader.getSystemClassLoader());
-    }
-
-    /** The first adapter that links against {@code compiler}, with its family; null when none does. */
-    public static Selection select(ClassLoader compiler) {
+        ClassLoader compiler = ClassLoader.getSystemClassLoader();
         VersionData data = VersionData.load();
         for (VersionData.Family family : FAMILIES) {
             String name = family.adapter();

@@ -123,7 +123,7 @@ object `flix-bridge` extends JavaModule {
 
     private def runUnit(cp: String): Unit = {
       val data = versionData(`flix-bridge`.moduleDir)
-      for (main <- Seq("CompilerModelTest", "DatalogGraphTest", "VersionDataTest")) run(cp, main)
+      for (main <- Seq("AdaptersTest", "CompilerModelTest", "DatalogGraphTest", "VersionDataTest")) run(cp, main)
       val families = data("families").arr
       // The newest family against its test jar, every older family against its floor jar.
       val abiJars = jar(families.head("testVersion").str) +: families.tail.map(f => jar(f("floor").str)).toSeq
