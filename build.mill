@@ -17,3 +17,25 @@ object kit extends JavaModule {
     }
   }
 }
+
+/**
+ * Adapters between plugins and unchanged Flix compilers, the ABI check driver and the version
+ * data. It depends on the compiler-neutral kit and contains no compiler code.
+ */
+object `flix-bridge` extends JavaModule {
+  def moduleDeps = Seq(kit)
+
+  def javacOptions = Seq("-Xlint:all", "-Werror", "--release", "21")
+
+  object test extends JavaTests {
+    def testFramework = "none"
+
+    def check() = Task.Command {
+      val cp = (runClasspath() ++ Seq(compile().classes)).map(_.path).mkString(java.io.File.pathSeparator)
+      for (main <- Seq("CompilerModelTest", "DatalogGraphTest"))
+        os.proc("java", "-cp", cp, "dev.flixw.sdk.bridge." + main)
+          .call(stdout = os.Inherit, stderr = os.Inherit)
+      ()
+    }
+  }
+}
