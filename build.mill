@@ -62,11 +62,14 @@ object `flix-bridge` extends JavaModule {
 
   /** Compiler-facing modules, grouped under one adapter boundary. */
   object adapter extends Module {
+    /** The current adapter. */
+    object flix0761 extends FlixAdapter { def family = "flix0761" }
+
     /** The outgoing adapter. */
     object flix0753 extends FlixAdapter { def family = "flix0753" }
 
     /** Every adapter, newest first. */
-    def all: Seq[FlixAdapter] = Seq(flix0753)
+    def all: Seq[FlixAdapter] = Seq(flix0761, flix0753)
   }
 
   /** Package every adapter family, but none of the compiler jars used to compile them. */
