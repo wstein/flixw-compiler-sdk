@@ -32,6 +32,9 @@ import java.util.List;
  */
 public interface CompilerModel {
 
+    /** The capability this interface is: one class per Flix family implements it. */
+    Capability CAPABILITY = Capability.METRICS;
+
     /**
      * This SDK's own version, which is not yet used for anything.
      *

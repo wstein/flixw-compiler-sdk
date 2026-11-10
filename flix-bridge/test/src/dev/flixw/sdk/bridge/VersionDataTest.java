@@ -82,6 +82,13 @@ public final class VersionDataTest {
         require(data.cacheFields("flix0761").equals(Map.of("sdkVersion", "1", "adapterFamily", "flix0761")),
             "SDK version and adapter family are explicit cache fields");
 
+        require(CompilerModel.CAPABILITY == Capability.METRICS && Capability.of("metrics").orElseThrow() == Capability.METRICS
+                && Capability.of("solverHook").orElseThrow() == Capability.SOLVER_HOOK
+                && Capability.of("nothing").isEmpty(), "the capabilities are named, and Metrics is CompilerModel");
+        require(data.families().stream().allMatch(f -> f.capabilities().equals(List.of("metrics"))),
+            "every family provides the metrics capability");
+        rejects(minimal("\"status\": \"verified\", \"family\": \"f\"").replace("[\"metrics\"]", "[\"magic\"]"),
+            "unknown capability");
         rejects("{", "unterminated object");
         rejects("{\"a\": 1, \"a\": 2}", "duplicate key");
         rejects("{} x", "trailing text");
