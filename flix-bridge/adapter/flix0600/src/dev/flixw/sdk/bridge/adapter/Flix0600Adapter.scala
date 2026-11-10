@@ -32,7 +32,7 @@ import scala.jdk.CollectionConverters._
  *
  * A hard dependency on one Flix AST. This engine links against the release in `plugin/lib`, and
  * against a materially different compiler it does not load at all — which
- * [[dev.flixw.sdk.bridge.Adapters]] turns into a sentence rather than a `NoSuchMethodError`.
+ * `dev.flixw.sdk.bridge.Adapters` turns into a sentence rather than a `NoSuchMethodError`.
  * For a measurement tool, refusing to run beats a number that is quietly wrong.
  */
 final class Flix0600Adapter extends CompilerModel {
