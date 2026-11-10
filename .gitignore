@@ -1,3 +1,4 @@
 .worktrees/
 out/
 flix-bridge/lib/
+package-check/
