@@ -66,12 +66,43 @@ public final class KitTest {
             check(!key.equals(KeyedStore.key(context, List.of(source), "v2", plugin)), "plugin version affects key");
             Files.writeString(root.resolve("flix.toml"), "manifest");
             check(!key.equals(KeyedStore.key(context, List.of(source), "v1", plugin)), "manifest affects key");
+            Files.delete(root.resolve("flix.toml"));
             Files.writeString(source, "source-two");
             check(!key.equals(KeyedStore.key(context, List.of(source), "v1", plugin)), "source contents affect key");
             Path cache = root.resolve("cache");
             check(KeyedStore.read(cache, key) == null, "absent cache misses");
             KeyedStore.write(cache, key, "opaque\u0000payload");
             check("opaque\u0000payload".equals(KeyedStore.read(cache, key)), "opaque payload round trip");
+            Path entry = cache.resolve(key + ".measurements");
+            Files.delete(entry);
+            Files.createSymbolicLink(entry, victim);
+            KeyedStore.write(cache, key, "opaque replacement");
+            check(Files.readString(victim).equals("original") && !Files.isSymbolicLink(entry),
+                "cache atomic replacement");
+            String payloadA = "a".repeat(65536);
+            String payloadB = "b".repeat(65536);
+            Thread writerA = new Thread(() -> {
+                for (int i = 0; i < 30; i++) KeyedStore.write(cache, key, payloadA);
+            });
+            Thread writerB = new Thread(() -> {
+                for (int i = 0; i < 30; i++) KeyedStore.write(cache, key, payloadB);
+            });
+            writerA.start();
+            writerB.start();
+            boolean complete = true;
+            try {
+                while (writerA.isAlive() || writerB.isAlive()) {
+                    String value = KeyedStore.read(cache, key);
+                    complete &= value == null || value.equals("opaque replacement")
+                        || value.equals(payloadA) || value.equals(payloadB);
+                }
+            } finally {
+                writerA.join();
+                writerB.join();
+            }
+            check(complete, "concurrent cache readers see complete entries");
+            check(List.of(payloadA, payloadB).contains(KeyedStore.read(cache, key)),
+                "concurrent cache writers publish a complete entry");
             KeyedStore.write(plugin, key, "ignored");
             check(KeyedStore.read(plugin, key) == null, "unwritable cache is best effort");
             check(KeyedStore.key(context, List.of(root.resolve("absent")), "v1", plugin) == null, "unreadable input disables cache");
