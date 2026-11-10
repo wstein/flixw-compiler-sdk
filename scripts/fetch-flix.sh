@@ -42,7 +42,7 @@ for version in $versions; do
     cp "$cache/flix-$version.jar" "$jar.part"
   else
     echo "fetch-flix: downloading Flix $version" >&2
-    curl -fsSL -o "$jar.part" "$base/v$version/flix.jar" \
+    curl -fsSL --retry 3 --retry-delay 5 --connect-timeout 30 --max-time 600 -o "$jar.part" "$base/v$version/flix.jar" \
       || { rm -f "$jar.part"; echo "fetch-flix: cannot download Flix $version" >&2; exit 1; }
   fi
   got=$(digest "$jar.part")
