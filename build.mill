@@ -18,23 +18,99 @@ object kit extends JavaModule {
   }
 }
 
+private val flixScalaVersion = "2.13.18"
+
+private def versionData(root: os.Path) = ujson.read(os.read(root / "resources" / "dev" / "flixw" / "sdk" / "bridge" / "versions.json"))
+
+/**
+ * One compiler-facing adapter family, compiled in isolation against the oldest compiler of its
+ * ABI family. `floor` in versions.json names that jar in `flix-bridge/lib` (see
+ * `scripts/fetch-flix.sh`). It is not the newest verified release: compiling against it would let a
+ * reference that only the newer release provides slip into a family whose floor lacks it.
+ */
+trait FlixAdapter extends ScalaModule {
+  def family: String
+
+  def scalaVersion = flixScalaVersion
+
+  def scalacOptions = Seq("-deprecation", "-feature", "-Xfatal-warnings")
+
+  def versionsFile = Task.Source(`flix-bridge`.moduleDir / "resources" / "dev" / "flixw" / "sdk" / "bridge" / "versions.json")
+
+  def compilerJar = Task.Input {
+    val floor = versionData(`flix-bridge`.moduleDir)("families").arr
+      .find(_("id").str == family).get("floor").str
+    val jar = `flix-bridge`.moduleDir / "lib" / s"flix-$floor.jar"
+    if (!os.exists(jar)) sys.error(s"missing $jar; run sh scripts/fetch-flix.sh")
+    PathRef(jar)
+  }
+
+  def compileClasspath = Task {
+    super.compileClasspath() ++ Seq(`flix-bridge`.compile().classes, compilerJar())
+  }
+}
+
 /**
  * Adapters between plugins and unchanged Flix compilers, the ABI check driver and the version
- * data. It depends on the compiler-neutral kit and contains no compiler code.
+ * data. It depends on the compiler-neutral kit and contains no compiler code: the compiler jars
+ * are compile and test inputs only and are never packaged.
  */
 object `flix-bridge` extends JavaModule {
   def moduleDeps = Seq(kit)
 
   def javacOptions = Seq("-Xlint:all", "-Werror", "--release", "21")
 
+  /** Compiler-facing modules, grouped under one adapter boundary. */
+  object adapter extends Module {
+    /** The outgoing adapter. */
+    object flix0753 extends FlixAdapter { def family = "flix0753" }
+
+    /** Every adapter, newest first. */
+    def all: Seq[FlixAdapter] = Seq(flix0753)
+  }
+
+  /** Package every adapter family, but none of the compiler jars used to compile them. */
+  override def localClasspath = Task {
+    super.localClasspath() ++ Task.traverse(adapter.all)(_.compile)().map(_.classes)
+  }
+
   object test extends JavaTests {
     def testFramework = "none"
 
+    /**
+     * Compile-only: the tests read Scala-compiled adapter classes, and javac needs the annotation
+     * class to read them without a warning. It must stay off the run class path, where the
+     * compiler jar already bundles the Scala library.
+     */
+    def compileMvnDeps = Seq(mvn"org.scala-lang:scala-library:$flixScalaVersion")
+
+    override def compileClasspath = Task {
+      super.compileClasspath() ++ Task.traverse(adapter.all)(_.compile)().map(_.classes)
+    }
+
+    /** Plain `main` methods run in order, not a framework: no test dependency joins a compiler class path. */
     def check() = Task.Command {
-      val cp = (runClasspath() ++ Seq(compile().classes)).map(_.path).mkString(java.io.File.pathSeparator)
+      val sep = java.io.File.pathSeparator
+      val cp = (runClasspath() ++ Seq(compile().classes)).map(_.path).mkString(sep)
+      val data = versionData(`flix-bridge`.moduleDir)
+      def jar(version: String) = {
+        val path = `flix-bridge`.moduleDir / "lib" / s"flix-$version.jar"
+        if (!os.exists(path)) sys.error(s"missing $path; run sh scripts/fetch-flix.sh")
+        path
+      }
       for (main <- Seq("CompilerModelTest", "DatalogGraphTest", "VersionDataTest"))
         os.proc("java", "-cp", cp, "dev.flixw.sdk.bridge." + main)
           .call(stdout = os.Inherit, stderr = os.Inherit)
+      val releases = data("releases").arr
+      for (module <- adapter.all) {
+        val family = data("families").arr.find(_("id").str == module.family).get
+        val testVersion = family("testVersion").str
+        val fixture = releases.find(_("version").str == testVersion).get("fixture").str
+        val simple = family("adapter").str.split('.').last
+        os.proc("java", "-cp", cp + sep + jar(testVersion), "dev.flixw.sdk.bridge." + simple + "Test",
+                moduleDir / "fixtures" / fixture)
+          .call(stdout = os.Inherit, stderr = os.Inherit)
+      }
       ()
     }
   }
