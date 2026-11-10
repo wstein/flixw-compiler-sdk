@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "families": [
+    {"id": "flix0761", "adapter": "dev.flixw.sdk.bridge.adapter.Flix0761Adapter", "floor": "0.76.1", "testVersion": "0.77.0", "capabilities": ["metrics"]},
+    {"id": "flix0753", "adapter": "dev.flixw.sdk.bridge.adapter.Flix0753Adapter", "floor": "0.75.3", "testVersion": "0.76.0", "capabilities": ["metrics"]},
+    {"id": "flix0680", "adapter": "dev.flixw.sdk.bridge.adapter.Flix0680Adapter", "floor": "0.68.0", "testVersion": "0.68.0", "capabilities": ["metrics"]},
+    {"id": "flix0672", "adapter": "dev.flixw.sdk.bridge.adapter.Flix0672Adapter", "floor": "0.67.2", "testVersion": "0.67.2", "capabilities": ["metrics"]},
+    {"id": "flix0661", "adapter": "dev.flixw.sdk.bridge.adapter.Flix0661Adapter", "floor": "0.66.1", "testVersion": "0.66.1", "capabilities": ["metrics"]},
+    {"id": "flix0610", "adapter": "dev.flixw.sdk.bridge.adapter.Flix0610Adapter", "floor": "0.61.0", "testVersion": "0.61.0", "capabilities": ["metrics"]},
+    {"id": "flix0600", "adapter": "dev.flixw.sdk.bridge.adapter.Flix0600Adapter", "floor": "0.60.0", "testVersion": "0.60.0", "capabilities": ["metrics"]}
+  ],
+  "releases": [
+    {"version": "0.59.0", "sha256": "461d62d302faf937748fe789e2a098612cfc7661b53a9ed9d1c1810638c9ebc4", "status": "rejected", "rejection": "Symbol$EffSym"},
+    {"version": "0.60.0", "sha256": "9920b107c9b4eb42bf17c6f556141b4cc8edbfffdf792de9a1bc5284505cd3c5", "status": "verified", "family": "flix0600", "fixture": "semantic-validation"},
+    {"version": "0.61.0", "sha256": "e024cd8a72d52d3553cf7fb6b18cb81e1315ad524d9bfab89e317d63dda04ab9", "status": "verified", "family": "flix0610", "fixture": "semantic-validation"},
+    {"version": "0.65.0", "sha256": "5cab00e9b5d30f48cd905f4971562e722621e1bc2d135077c67e86ff02c7cb13", "status": "verified", "family": "flix0610", "fixture": "semantic-validation"},
+    {"version": "0.66.0", "sha256": "e3910bb06f3c60e2439ba4cc9bbf0fc51ca67c6ad06eceb8e0e28804741b67a3", "status": "rejected", "rejection": "dev.flix.runtime.Global"},
+    {"version": "0.66.1", "sha256": "71b46d37d9c2e24b4eabd67ed2491a33adbb1a039e7bc49ef1f7556870e6344d", "status": "verified", "family": "flix0661", "fixture": "semantic"},
+    {"version": "0.67.1", "sha256": "2f888a5c1ca2b343915add0ca697d36167fd16ae82e61b37bc0be29d09a1d8c4", "status": "verified", "family": "flix0661", "fixture": "semantic"},
+    {"version": "0.67.2", "sha256": "3162ba033d77e481c8cd731441e1f279bd8f44e5f278b2b21632149c30f8ed3f", "status": "verified", "family": "flix0672", "fixture": "semantic"},
+    {"version": "0.68.0", "sha256": "af568a2d4046207f908f8ec37786409b3dccdec944c2df5f571444599fb6b7c8", "status": "verified", "family": "flix0680", "fixture": "semantic"},
+    {"version": "0.75.2", "sha256": "a2697d875725a0dde6e793b8d54cb220e86167a6d49ec5f0ccb0832966c8c15a", "status": "verified", "family": "flix0680", "fixture": "semantic"},
+    {"version": "0.75.3", "sha256": "bf123cdb6494d6e0cbff6399bf185314d332bbe97bfd776e4abc03a5d39dd954", "status": "verified", "family": "flix0753", "fixture": "semantic"},
+    {"version": "0.76.0", "sha256": "d8d9a3870e199c03ed6364ea9430f56f67bfd38c332c411628a6a7cb88b2b0b4", "status": "verified", "family": "flix0753", "fixture": "semantic"},
+    {"version": "0.76.1", "sha256": "b2ed2b7f49902e2dfe1b4f10e23d9a5cb085461e7e8c64909ca2b3abfa566e74", "status": "verified", "family": "flix0761", "fixture": "semantic"},
+    {"version": "0.77.0", "sha256": "20007d79f97b696ba388113e2a4235227691d33a00bfa669f2316b37a7b14201", "status": "verified", "family": "flix0761", "fixture": "semantic"},
+    {"version": "0.78.0", "sha256": "f6a8297a1fe269751aea6255ddd1549f64e74d80b5c6a99ac2a56201a7330957", "status": "verified", "family": "flix0761", "fixture": "semantic"},
+    {"version": "0.79.0", "sha256": "8fad2aa09567a7edabcc43f4101fa6199131df2c22929e001c87659d764f6dcf", "status": "verified", "family": "flix0761", "fixture": "semantic"}
+  ]
+}
