@@ -22,13 +22,20 @@ import java.util.stream.Collectors;
  *     one, and that no newer family claims it, so the registry selects this family for it.
  * <li>{@code adapter <family> <version> <fixtureRoot>} runs with that release's jar on the class
  *     path. It checks that {@link Adapters#select()} chooses this family and that the adapter
- *     measures the fixture, and prints a digest of the measurement.
+ *     measures the fixture, and and that its measurement digest is the recorded one.
  * <li>{@code rejected <libDir>} checks that every rejected release is refused: the
  *     ABI check refuses it and names the reference that {@code versions.json} gives as the reason.
  * </ul>
  */
 public final class ConformanceTest {
     private static int passed;
+
+    /**
+     * Digest of the per-definition measurement of the fixtures. The two fixtures hold the same
+     * program, and every adapter family measures it identically; a change here is a change in what
+     * an adapter reports, to be made on purpose and recorded with the new value.
+     */
+    private static final String MEASUREMENT = "0d5322308d140a9b";
 
     private ConformanceTest() { }
 
@@ -121,8 +128,11 @@ public final class ConformanceTest {
                     .append(def.parameters()).append('|').append(def.cognitive()).append('|')
                     .append(def.nesting()).append('|').append(def.isTest()).append('\n');
             summary.append(model.lines()).append(model.modules().size()).append(model.enums());
+            String measurement = sha256(summary.toString());
+            require(measurement.equals(MEASUREMENT), version + ": measurement " + measurement
+                + " differs from the recorded " + MEASUREMENT + " that every release gives for the fixtures");
             System.out.println("ConformanceTest adapter " + familyId + " " + version + ": " + passed
-                + " passed, 0 failed, defs=" + model.defs().size() + " measurement=" + sha256(summary.toString()));
+                + " passed, 0 failed, defs=" + model.defs().size() + " measurement=" + measurement);
         } finally {
             delete(project);
         }
