@@ -1,0 +1,19 @@
+//| mill-jvm-version: temurin:21
+package build
+
+import mill._, scalalib._
+
+/** Compiler-neutral shell: no Flix, Scala or plugin dependencies. */
+object kit extends JavaModule {
+  def javacOptions = Seq("-Xlint:all", "-Werror", "--release", "21")
+
+  object test extends JavaTests {
+    def testFramework = "none"
+    def check() = Task.Command {
+      val cp = (runClasspath() ++ Seq(compile().classes)).map(_.path).mkString(java.io.File.pathSeparator)
+      os.proc("java", "-cp", cp, "dev.flixw.sdk.kit.KitTest")
+        .call(stdout = os.Inherit, stderr = os.Inherit)
+      ()
+    }
+  }
+}
