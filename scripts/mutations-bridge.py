@@ -25,7 +25,7 @@ cases = [
     ("warning-newest", B + "VersionData.java",
      'return versions.stream().max(Comparator.comparing(VersionData::key)).orElse("none");',
      'return versions.stream().findFirst().orElse("none");',
-     UNIT, 1, "the newest release is chosen numerically"),
+     UNIT, 1, "the notice names the release, the newest verified one"),
     ("nested-classes", B + "AdapterAbi.java",
      'if (type.startsWith(adapter + "$")) pending.add(type);', '',
      UNIT, 1, "reference that only a nested class makes"),
@@ -72,6 +72,7 @@ if selected and selected not in {case[0] for case in cases}:
     raise SystemExit("unknown MUT_ONLY=" + selected)
 ignore = shutil.ignore_patterns("out", ".git", ".worktrees", "package-check", "lib")
 done = 0
+survivors = []
 for name, filename, before, after, command, status, reason in cases:
     if selected and name != selected:
         continue
@@ -93,8 +94,11 @@ for name, filename, before, after, command, status, reason in cases:
                                 env={**os.environ, "TMPDIR": directory})
         output = result.stdout + result.stderr
         if result.returncode != status or reason not in output:
-            raise SystemExit(name + ": exit " + str(result.returncode) + " (expected " + str(status)
-                             + ") or reason missing: " + reason + "\n" + output[-3000:])
+            print(name + ": NOT REJECTED for the intended reason: exit " + str(result.returncode)
+                  + " (expected " + str(status) + "), reason missing: " + reason + "\n" + output[-1500:], flush=True)
+            survivors.append(name)
+            continue
         print(name + ": rejected, exit " + str(status) + " (" + reason + ")", flush=True)
         done += 1
-print("mutations-bridge: " + str(done) + " rejected, 0 survived")
+print("mutations-bridge: " + str(done) + " rejected, " + str(len(survivors)) + " survived " + " ".join(survivors))
+raise SystemExit(1 if survivors else 0)
