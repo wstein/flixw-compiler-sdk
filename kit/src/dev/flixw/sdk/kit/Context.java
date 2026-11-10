@@ -1,6 +1,7 @@
 package dev.flixw.sdk.kit;
 
 import java.nio.file.Path;
+import java.util.Map;
 
 /** The flixw ABI 1 paths supplied to a plugin. */
 public record Context(Path projectRoot, Path compilerJar, Path java, Path pluginCache) {
@@ -9,7 +10,7 @@ public record Context(Path projectRoot, Path compilerJar, Path java, Path plugin
     }
 
     /** Reads the ABI 1 environment; the cache variable remains optional. */
-    public static Context read(java.util.Map<String, String> environment) {
+    public static Context read(Map<String, String> environment) {
         if (!"1".equals(environment.get("FLIXW_ABI_VERSION")))
             throw new Usage("requires flixw ABI version 1");
         // Optional, unlike the rest. It arrived after ABI 1 was first published, so a
@@ -22,7 +23,7 @@ public record Context(Path projectRoot, Path compilerJar, Path java, Path plugin
                 ? null : Path.of(cache).toAbsolutePath().normalize());
     }
 
-    private static Path path(java.util.Map<String, String> environment, String name) {
+    private static Path path(Map<String, String> environment, String name) {
         String value = environment.get(name);
         if (value == null || value.isBlank()) throw new Usage("missing " + name);
         return Path.of(value).toAbsolutePath().normalize();
