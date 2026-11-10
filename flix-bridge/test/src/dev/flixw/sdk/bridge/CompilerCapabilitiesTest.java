@@ -189,14 +189,16 @@ public final class CompilerCapabilitiesTest {
             "package ca.uwaterloo.flix.api; public final class Other { public static int two() { return 2; } }");
         write(source, "ca/uwaterloo/flix/api/Third.java",
             "package ca.uwaterloo.flix.api; public final class Third { public static int three() { return 3; } }");
+        write(source, "ca/uwaterloo/flix/api/Stray.java",
+            "package ca.uwaterloo.flix.api; public final class Stray { public static int only() { return 5; } }");
         write(source, "fixture/Outer.java", "package fixture; public final class Outer { "
-            + "public int plain() { return ca.uwaterloo.flix.api.Flix.one(); } "
+            + "public int plain() { return ca.uwaterloo.flix.api.Flix.one() + new OuterSibling().sibling(); } "
             + "public static final class Inner { public int nested() { return ca.uwaterloo.flix.api.Other.two(); } } "
             + "public static final class Deeper { public static final class Innermost { "
             + "public int deepest() { return ca.uwaterloo.flix.api.Third.three(); } } } }");
         write(source, "fixture/OuterSibling.java", "package fixture; public final class OuterSibling { "
             + "public int sibling() { return ca.uwaterloo.flix.api.Flix.class.hashCode(); } "
-            + "public int stray() { return ca.uwaterloo.flix.api.Third.three() + 4; } }");
+            + "public int stray() { return ca.uwaterloo.flix.api.Stray.only(); } }");
         Path classes = work.resolve("nested-classes");
         Files.createDirectories(classes);
         try (var paths = Files.walk(source)) {
@@ -217,11 +219,11 @@ public final class CompilerCapabilitiesTest {
                 "the contract has a reference that only a doubly nested class makes");
             require(references.contains("class ca.uwaterloo.flix.api.Other"),
                 "the contract has the class referenced from a nested class");
-            require(references.stream().noneMatch(r -> r.contains("OuterSibling")),
-                "a class that only shares the adapter's name prefix is not part of the contract");
+            require(references.stream().noneMatch(r -> r.contains("Stray")),
+                "a class that only shares the adapter's name prefix, though the adapter refers to it, is not part of the contract");
             AdapterAbi.Contract sibling = AdapterAbi.contract("fixture.OuterSibling", loader);
             require(sibling.references().stream().map(AdapterAbi.Reference::display)
-                    .anyMatch(r -> r.equals("ca.uwaterloo.flix.api.Third.three:()I")),
+                    .anyMatch(r -> r.equals("ca.uwaterloo.flix.api.Stray.only:()I")),
                 "a sibling has its own contract");
             try {
                 AdapterAbi.contract("fixture.Absent", loader);
