@@ -119,11 +119,26 @@ object `flix-bridge` extends JavaModule {
       for (main <- Seq("CompilerModelTest", "DatalogGraphTest", "VersionDataTest"))
         os.proc("java", "-cp", cp, "dev.flixw.sdk.bridge." + main)
           .call(stdout = os.Inherit, stderr = os.Inherit)
+      val families = data("families").arr
+      // The newest family against its test jar, every older family against its floor jar.
+      val abiJars = jar(families.head("testVersion").str) +: families.tail.map(f => jar(f("floor").str)).toSeq
+      os.proc("java", "-cp", cp, "dev.flixw.sdk.bridge.CompilerCapabilitiesTest", abiJars)
+        .call(stdout = os.Inherit, stderr = os.Inherit)
       val releases = data("releases").arr
+      os.proc("java", "-cp", cp, "dev.flixw.sdk.bridge.ConformanceTest", "rejected", moduleDir / os.up / "lib")
+        .call(stdout = os.Inherit, stderr = os.Inherit)
       for (module <- adapter.all) {
         val family = data("families").arr.find(_("id").str == module.family).get
         val testVersion = family("testVersion").str
         val fixture = releases.find(_("version").str == testVersion).get("fixture").str
+        os.proc("java", "-cp", cp, "dev.flixw.sdk.bridge.ConformanceTest", "linkage", module.family,
+                moduleDir / os.up / "lib")
+          .call(stdout = os.Inherit, stderr = os.Inherit)
+        // One JVM per verified release of the family, each with only that release's jar.
+        for (release <- releases.filter(r => r.obj.get("family").exists(_.str == module.family)))
+          os.proc("java", "-cp", cp + sep + jar(release("version").str), "dev.flixw.sdk.bridge.ConformanceTest",
+                  "adapter", module.family, release("version").str, moduleDir / "fixtures")
+            .call(stdout = os.Inherit, stderr = os.Inherit)
         val simple = family("adapter").str.split('.').last
         os.proc("java", "-cp", cp + sep + jar(testVersion), "dev.flixw.sdk.bridge." + simple + "Test",
                 moduleDir / "fixtures" / fixture)

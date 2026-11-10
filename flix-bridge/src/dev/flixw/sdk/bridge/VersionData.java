@@ -70,6 +70,8 @@ public final class VersionData {
             Family family = new Family(text(value, "id"), text(value, "adapter"), version(value, "floor"),
                 version(value, "testVersion"), strings(value.get("capabilities"), "capabilities"));
             if (!ids.add(family.id())) throw bad("duplicate family " + family.id());
+            for (String capability : family.capabilities())
+                if (Capability.of(capability).isEmpty()) throw bad("unknown capability " + capability);
             families.add(family);
         }
         List<Release> releases = new ArrayList<>();
