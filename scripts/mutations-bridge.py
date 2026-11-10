@@ -51,7 +51,7 @@ cases = [
      'if (!present(compiler, "dev.flix.runtime.Global")) {', 'if (false) {',
      UNIT, 1, "the gate requires the compiler runtime class"),
     ("select-linkage", B + "Adapters.java",
-     'if (!AdapterAbi.missing(AdapterAbi.contract(name), compiler).isEmpty()) continue;', '',
+     'if (!AdapterAbi.missing(AdapterAbi.contract(name), loader).isEmpty()) continue;', '',
      ["./mill", "--no-server", "flix-bridge.test.family", "--id", "flix0600"], 1, "the registry selects flix0600, not"),
     ("select-overload", B + "Adapters.java",
      '    /** What this build could support', '    public static Selection select(ClassLoader other) { return select(); }\n\n    /** What this build could support',
